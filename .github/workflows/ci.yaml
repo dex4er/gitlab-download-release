@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - .dockerignore
+      - .editorconfig
+      - .gitignore
+      - .hadolint.yaml
+      - .markdownlint.yaml
+      - .trunk/**
+      - LICENSE
+      - README.md
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build
+
+    permissions:
+      id-token: write
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64/v8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare environment variables
+        run: cat .github/.env >> $GITHUB_ENV
+
+      - name: Set up QEMU
+        if: contains(matrix.platform, 'linux/arm64')
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Calculate new version number
+        id: version
+        run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
+
+      - name: Build image
+        run: make image PLATFORM="${{ matrix.platform }}"
+
+      - name: Inspect container image
+        run: docker inspect "localhost:5000/$IMAGE_NAME" | jq -C .
+
+      - name: Test built image
+        run: make test-image PLATFORM="${{ matrix.platform }}"
+
+      - name: Push to Docker
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: make push DOCKER_REPO="${DOCKER_REPO}" PLATFORM="${{ matrix.platform }}"
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+
+  tag:
+    name: Tag
+
+    needs: build
+
+    permissions:
+      id-token: write
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare environment variables
+        run: cat .github/.env >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Reuse new version number
+        run: echo VERSION=${{ needs.build.outputs.version }} | tee -a $GITHUB_ENV
+
+      - name: Tag multiarch images
+        run: |
+          docker manifest create ${DOCKER_REPO}:${VERSION} ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:${VERSION}
+
+      - name: Tag mutliarch image - additional
+        if: contains(needs.build.outputs.version, '-SNAPSHOT-') != true
+        run: |
+          docker manifest create ${DOCKER_REPO}:${VERSION%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:${VERSION%.*}
+          docker manifest create ${DOCKER_REPO}:${VERSION%%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:${VERSION%%.*}
+          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:latest
+
+      - name: Create new git tag
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && contains(needs.build.outputs.version, '-SNAPSHOT-') != true
+        run: |
+          git tag -f ${{ needs.build.outputs.version }}
+          git push -f origin ${{ needs.build.outputs.version }}
