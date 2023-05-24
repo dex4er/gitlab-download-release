@@ -1,10 +1,22 @@
+FROM golang:1.20.4 AS build
+
+ARG VERSION
+
+WORKDIR /src
+
+COPY Makefile go.mod go.sum ./
+RUN make download
+
+COPY . .
+RUN make clean build VERSION=$VERSION
+
 FROM alpine
 
 WORKDIR /usr/local/bin
 
 RUN apk add bash
 
-COPY gitlab-download-release .
+COPY --from=build /src/gitlab-download-release .
 
 ENTRYPOINT ["gitlab-download-release"]
 

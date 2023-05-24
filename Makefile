@@ -3,13 +3,12 @@ ifneq (,$(wildcard .env))
   export
 endif
 
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
-
-GOROOT := $(shell go env GOROOT)
+GOOS = $(shell go env GOOS)
+export GOOS
+GOARCH = $(shell go env GOARCH)
+export GOARCH
+GOARM = $(shell go env GOARM)
+export GOARM
 
 ifeq ($(OS),Windows_NT)
 BIN := gitlab-download-release.exe
@@ -90,6 +89,7 @@ VERSION ?= $(shell ( git describe --tags --exact-match 2>/dev/null || ( git desc
 version: ## Show version
 	@echo "$(VERSION)"
 
+DOCKERFILE ?= Dockerfile
 IMAGE_NAME ?= gitlab-download-release
 LOCAL_REPO ?= localhost:5000/$(IMAGE_NAME)
 DOCKER_REPO ?= localhost:5000/$(IMAGE_NAME)
@@ -105,7 +105,8 @@ endif
 .PHONY: image
 image: ## Build a local image without publishing artifacts.
 	$(call print-target)
-	docker buildx build --platform=$(PLATFORM) \
+	docker buildx build --file=$(DOCKERFILE) \
+	--platform=$(PLATFORM) \
 	--build-arg VERSION=$(VERSION) \
 	--build-arg REVISION=$(shell git rev-parse HEAD) \
 	--build-arg BUILDDATE=$(shell TZ=GMT date '+%Y-%m-%dT%R:%S.%03NZ') \

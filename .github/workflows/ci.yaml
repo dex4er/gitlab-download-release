@@ -31,9 +31,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64/v8
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64/v8
+            arch: arm64
+            arm: v8
 
     steps:
       - name: Checkout
@@ -60,7 +63,7 @@ jobs:
         run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
 
       - name: Build image
-        run: make image PLATFORM="${{ matrix.platform }}"
+        run: make download build image GOOS=linux GOARCH="${{ matrix.arch }}" GOARM="${{ matrix.arm }}" PLATFORM="${{ matrix.platform }}"
 
       - name: Inspect container image
         run: docker inspect "localhost:5000/$IMAGE_NAME" | jq -C .
