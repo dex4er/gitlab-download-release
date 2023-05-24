@@ -34,9 +34,8 @@ jobs:
         include:
           - platform: linux/amd64
             arch: amd64
-          - platform: linux/arm64/v8
+          - platform: linux/arm64
             arch: arm64
-            arm: v8
 
     steps:
       - name: Checkout
@@ -63,7 +62,7 @@ jobs:
         run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
 
       - name: Build image
-        run: make download build image GOOS=linux GOARCH="${{ matrix.arch }}" GOARM="${{ matrix.arm }}" PLATFORM="${{ matrix.platform }}"
+        run: make download build image GOOS=linux GOARCH="${{ matrix.arch }}" PLATFORM="${{ matrix.platform }}"
 
       - name: Inspect container image
         run: docker inspect "localhost:5000/$IMAGE_NAME" | jq -C .
@@ -108,17 +107,17 @@ jobs:
 
       - name: Tag multiarch images
         run: |
-          docker manifest create ${DOCKER_REPO}:${VERSION} ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:${VERSION} ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:${VERSION}
 
       - name: Tag mutliarch image - additional
         if: contains(needs.build.outputs.version, '-SNAPSHOT-') != true
         run: |
-          docker manifest create ${DOCKER_REPO}:${VERSION%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:${VERSION%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:${VERSION%.*}
-          docker manifest create ${DOCKER_REPO}:${VERSION%%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:${VERSION%%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:${VERSION%%.*}
-          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:${VERSION}-linux-arm64-v8 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:latest
 
       - name: Create new git tag

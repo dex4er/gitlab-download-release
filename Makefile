@@ -95,9 +95,9 @@ LOCAL_REPO ?= localhost:5000/$(IMAGE_NAME)
 DOCKER_REPO ?= localhost:5000/$(IMAGE_NAME)
 
 ifeq ($(shell uname -m),arm64)
-PLATFORM ?= linux/arm64/v8
+PLATFORM ?= linux/arm64
 else ifeq ($(shell uname -m),aarch64)
-PLATFORM ?= linux/arm64/v8
+PLATFORM ?= linux/arm64
 else
 PLATFORM ?= linux/amd64
 endif
