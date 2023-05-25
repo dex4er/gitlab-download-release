@@ -49,9 +49,9 @@ install: ## Build and install app binary
 install: $(BIN)
 	$(call print-target)
 ifeq ($(OS),Windows_NT)
-	install $(BIN) $(BINDIR)
-else
 	powershell -Command "Copy-Item -Path '$(BIN)' -Destination '$(BINDIR)'"
+else
+	install $(BIN) $(BINDIR)
 endif
 
 .PHONY: uninstall
