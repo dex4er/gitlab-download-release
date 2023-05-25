@@ -1,5 +1,9 @@
 FROM alpine
 
+ARG VERSION
+ARG REVISION
+ARG BUILDDATE
+
 WORKDIR /usr/local/bin
 
 RUN apk --no-cache add bash
