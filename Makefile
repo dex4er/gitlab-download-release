@@ -154,7 +154,7 @@ test-image: ## Test local image
 help:
 	@echo Targets:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "Get-Content $(MAKEFILE_LIST) | ForEach-Object { if ($$_ -match '^[a-zA-Z0-9._-]+:.*?## ') { $$match = $$_ -split ':.*?## '; '{0,-20} {1}' -f $$match[0], $$match[1] } } | Sort-Object"
+	@powershell -Command "Get-Content $(MAKEFILE_LIST) | ForEach-Object { if ($$_ -match '^[a-zA-Z0-9._-]+:.*?## ') { $$match = $$_ -split ':.*?## '; '  {0,-20} {1}' -f $$match[0], $$match[1] } } | Sort-Object"
 else
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 endif
