@@ -21,10 +21,14 @@ endif
 CGO_ENABLED := 0
 export CGO_ENABLED
 
-ifneq ($(OS),Windows_NT)
-VERSION ?= $(shell ( git describe --tags --exact-match 2>/dev/null || ( git describe --tags 2>/dev/null || echo "0.0.0-0-g$$(git rev-parse --short=8 HEAD)" ) | sed 's/-[0-9][0-9]*-g/-SNAPSHOT-/') | sed 's/^v//' )
+ifeq ($(OS),Windows_NT)
+VERSION ?= $(shell powershell -Command "echo dHJ5IHsgJGV4YWN0TWF0Y2ggPSBnaXQgZGVzY3JpYmUgLS10YWdzIC0tZXhhY3QtbWF0Y2ggMj4kbnVsbDsgaWYgKC1ub3QgW3N0cmluZ106OklzTnVsbE9yRW1wdHkoJGV4YWN0TWF0Y2gpKSB7ICR2ZXJzaW9uID0gJGV4YWN0TWF0Y2ggfSBlbHNlIHsgJHRhZ3MgPSBnaXQgZGVzY3JpYmUgLS10YWdzIDI+JG51bGw7IGlmIChbc3RyaW5nXTo6SXNOdWxsT3JFbXB0eSgkdGFncykpIHsgJGNvbW1pdEhhc2ggPSAoZ2l0IHJldi1wYXJzZSAtLXNob3J0PTggSEVBRCkuVHJpbSgpOyAkdmVyc2lvbiA9ICIwLjAuMC0wLWckY29tbWl0SGFzaCIgfSBlbHNlIHsgJHZlcnNpb24gPSAkdGFncyAtcmVwbGFjZSAnLVswLTldWzAtOV0qLWcnLCAnLVNOQVBTSE9ULScgfSB9OyAkdmVyc2lvbiA9ICR2ZXJzaW9uIC1yZXBsYWNlICdedicsICcnOyBXcml0ZS1PdXRwdXQgJHZlcnNpb24gfSBjYXRjaCB7IFdyaXRlLU91dHB1dCAiMC4wLjAiIH0K | powershell -NoProfile -NonInteractive -Command '[Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($$input)) | iex'")
+REVISION ?= $(shell git rev-parse HEAD)
+BUILDDATE ?= $(shell powershell -Command "echo JGRhdGV0aW1lID0gR2V0LURhdGU7ICR1dGMgPSAkZGF0ZXRpbWUuVG9Vbml2ZXJzYWxUaW1lKCk7ICR1dGMudG9zdHJpbmcoInl5eXktTU0tZGRUSEg6bW06c3NaIikK | powershell -NoProfile -NonInteractive -Command '[Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($$input)) | iex'")
 else
-VERSION ?= dev
+VERSION ?= $(shell ( git describe --tags --exact-match 2>/dev/null || ( git describe --tags 2>/dev/null || echo "0.0.0-0-g$$(git rev-parse --short=8 HEAD)" ) | sed 's/-[0-9][0-9]*-g/-SNAPSHOT-/') | sed 's/^v//' )
+REVISION ?= $(shell git rev-parse HEAD)
+BUILDDATE ?= $(shell TZ=GMT date '+%Y-%m-%dT%R:%SZ')
 endif
 
 .PHONY: build
@@ -82,24 +86,45 @@ else
 	rm -rf dist $(BIN)
 endif
 
-ifneq ($(OS),Windows_NT)
-VERSION ?= $(shell ( git describe --tags --exact-match 2>/dev/null || ( git describe --tags 2>/dev/null || echo "0.0.0-0-g$$(git rev-parse --short=8 HEAD)" ) | sed 's/-[0-9][0-9]*-g/-SNAPSHOT-/') | sed 's/^v//' )
-
 .PHONY: version
 version: ## Show version
+ifeq ($(OS),Windows_NT)
+	@echo $(VERSION)
+else
 	@echo "$(VERSION)"
+endif
+
+.PHONY: revision
+revision: ## Show revision
+ifeq ($(OS),Windows_NT)
+	@echo $(REVISION)
+else
+	@echo "$(REVISION)"
+endif
+
+.PHONY: builddate
+builddate: ## Show build date
+ifeq ($(OS),Windows_NT)
+	@echo $(BUILDDATE)
+else
+	@echo "$(BUILDDATE)"
+endif
 
 DOCKERFILE ?= Dockerfile
 IMAGE_NAME ?= gitlab-download-release
 LOCAL_REPO ?= localhost:5000/$(IMAGE_NAME)
 DOCKER_REPO ?= localhost:5000/$(IMAGE_NAME)
 
-ifeq ($(shell uname -m),arm64)
-PLATFORM ?= linux/arm64
+ifeq ($(PROCESSOR_ARCHITECTURE),ARM64)
+PLATFORM = linux/arm64
+else ifeq ($(shell uname -m),arm64)
+PLATFORM = linux/arm64
 else ifeq ($(shell uname -m),aarch64)
-PLATFORM ?= linux/arm64
+PLATFORM = linux/arm64
+else ifeq ($(findstring ARM64, $(shell uname -s)),ARM64)
+PLATFORM = linux/arm64
 else
-PLATFORM ?= linux/amd64
+PLATFORM = linux/amd64
 endif
 
 .PHONY: image
@@ -108,8 +133,8 @@ image: ## Build a local image without publishing artifacts.
 	docker buildx build --file=$(DOCKERFILE) \
 	--platform=$(PLATFORM) \
 	--build-arg VERSION=$(VERSION) \
-	--build-arg REVISION=$(shell git rev-parse HEAD) \
-	--build-arg BUILDDATE=$(shell TZ=GMT date '+%Y-%m-%dT%R:%S.%03NZ') \
+	--build-arg REVISION=$(REVISION) \
+	--build-arg BUILDDATE=$(BUILDDATE) \
 	--tag $(LOCAL_REPO) \
 	--load \
 	.
@@ -123,8 +148,7 @@ push: ## Publish to container registry.
 .PHONY: test-image
 test-image: ## Test local image
 	$(call print-target)
-	docker run --platform=$(PLATFORM) --rm -t $(LOCAL_REPO) -v | grep version
-endif
+	docker run --platform=$(PLATFORM) --rm -t $(LOCAL_REPO) -v
 
 .PHONY: help
 help:
