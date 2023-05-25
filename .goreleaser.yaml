@@ -26,3 +26,6 @@ archives:
 
 checksum:
   name_template: checksums.txt
+
+changelog:
+  use: github
