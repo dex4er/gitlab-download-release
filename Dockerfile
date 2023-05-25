@@ -2,7 +2,7 @@ FROM alpine
 
 WORKDIR /usr/local/bin
 
-RUN apk add bash
+RUN apk --no-cache add bash
 
 COPY gitlab-download-release .
 

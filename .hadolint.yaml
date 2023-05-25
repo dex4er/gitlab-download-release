@@ -1,0 +1,4 @@
+# Following source doesn't work in most setups
+ignored:
+  - DL3006 # Always tag the version of an image explicitly
+  - DL3018 # Pin versions in apk add. Instead of `apk add <package>` use `apk add <package>=<version>`
