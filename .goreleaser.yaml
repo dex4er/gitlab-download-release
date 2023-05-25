@@ -17,8 +17,6 @@ builds:
       - darwin
       - linux
       - windows
-    goarm:
-      - v8
 
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"

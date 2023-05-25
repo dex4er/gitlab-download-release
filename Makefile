@@ -7,8 +7,6 @@ GOOS = $(shell go env GOOS)
 export GOOS
 GOARCH = $(shell go env GOARCH)
 export GOARCH
-GOARM = $(shell go env GOARM)
-export GOARM
 
 ifeq ($(OS),Windows_NT)
 BIN := gitlab-download-release.exe
