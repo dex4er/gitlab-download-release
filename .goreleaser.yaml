@@ -17,6 +17,8 @@ builds:
       - darwin
       - linux
       - windows
+    flags:
+      - -trimpath
 
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
