@@ -33,7 +33,7 @@ download:
           --quiet -c advice.detachedHead=false
       fi
     - . $ASDF_DIR/asdf.sh
-    - asdf plugin add github-cli
+    - asdf plugin add github-cli || test $? = 2
     - asdf install github-cli latest
     - asdf global github-cli latest
     - echo -e "\e[0Ksection_end:`date +%s`:asdf\r\e[0K"
