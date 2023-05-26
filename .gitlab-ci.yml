@@ -40,7 +40,7 @@ download:
     - |
       while :; do
         for i in $(seq 1 30); do
-          gh release view ${CI_COMMIT_TAG} && break 2
+          gh release view ${CI_COMMIT_TAG} -R dex4er/gitlab-download-release && break 2
           sleep 10
         done
         exit 1
