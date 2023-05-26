@@ -43,7 +43,7 @@ endif
 .PHONY: build
 build: ## Build app binary for single target
 	$(call print-target)
-	$(GO) build -ldflags="-s -w -X main.version=$(VERSION)"
+	$(GO) build -trimpath -ldflags="-s -w -X main.version=$(VERSION)"
 
 $(BIN):
 	@$(MAKE) build
