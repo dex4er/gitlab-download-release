@@ -151,8 +151,8 @@ image: ## Build a local image without publishing artifacts.
 .PHONY: push
 push: ## Publish to container registry.
 	$(call print-target)
-	$(DOCKER) tag $(LOCAL_REPO) $(DOCKER_REPO):$(VERSION)-$(subst /,-,$(PLATFORM))
-	$(DOCKER) push $(DOCKER_REPO):$(VERSION)-$(subst /,-,$(PLATFORM))
+	$(DOCKER) tag $(LOCAL_REPO) $(DOCKER_REPO):v$(VERSION)-$(subst /,-,$(PLATFORM))
+	$(DOCKER) push $(DOCKER_REPO):v$(VERSION)-$(subst /,-,$(PLATFORM))
 
 .PHONY: test-image
 test-image: ## Test local image

@@ -48,7 +48,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:     "gitlab-download-release",
 		Short:   "Download release from Gitlab project",
-		Version: version,
+		Version: "v" + version,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if genMarkdown != "" {
 				if err := doc.GenMarkdownTree(cmd, genMarkdown); err != nil {

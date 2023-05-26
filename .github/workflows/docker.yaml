@@ -114,15 +114,15 @@ jobs:
 
       - name: Tag multiarch images
         run: |
-          docker manifest create ${DOCKER_REPO}:${VERSION} ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
-          docker manifest push ${DOCKER_REPO}:${VERSION}
+          docker manifest create ${DOCKER_REPO}:v${VERSION} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:v${VERSION}
 
       - name: Tag mutliarch image - additional
         if: contains(needs.build.outputs.version, '-SNAPSHOT-') != true
         run: |
-          docker manifest create ${DOCKER_REPO}:${VERSION%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:${VERSION%.*} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:${VERSION%.*}
-          docker manifest create ${DOCKER_REPO}:${VERSION%%.*} ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:${VERSION%%.*} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:${VERSION%%.*}
-          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:${VERSION}-linux-arm64 ${DOCKER_REPO}:${VERSION}-linux-amd64
+          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:latest

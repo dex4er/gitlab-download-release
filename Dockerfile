@@ -22,4 +22,4 @@ LABEL \
   org.opencontainers.image.title=gitlab-download-release \
   org.opencontainers.image.url=https://github.com/dex4er/gitlab-download-release \
   org.opencontainers.image.vendor=dex4er \
-  org.opencontainers.image.version=${VERSION}
+  org.opencontainers.image.version=v${VERSION}

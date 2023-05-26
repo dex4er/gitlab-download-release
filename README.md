@@ -30,6 +30,9 @@ gitlab-download-release [flags]
 
 ## .gitlab-ci.yml
 
+If run in CI then by default `gitlab-download-release` uses GITHUB_TOKEN and
+downloads all files from the current project.
+
 Example:
 
 ```yaml
@@ -44,10 +47,10 @@ download:
   variables:
     GIT_STRATEGY: none
   script:
-    - echo -e "\e[0Ksection_start:`date +%s`:download\r\e[0KBuild"
+    - echo -e "\e[0Ksection_start:`date +%s`:download\r\e[0KDownload"
     - mkdir release
     - cd release
-    - gitlab-download-release # by default uses GITHUB_TOKEN and all files are downloaded
+    - gitlab-download-release
     - sha256sum -c checksums.txt
     - echo -e "\e[0Ksection_end:`date +%s`:download\r\e[0K"
   artifacts:
