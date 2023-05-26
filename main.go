@@ -174,9 +174,13 @@ func downloadRelease(params downloadReleaseParams) error {
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return fmt.Errorf("cannot download: %w", err)
+			return fmt.Errorf("cannot do a HTTP request: %w", err)
 		}
 		defer res.Body.Close()
+
+		if req.Response.StatusCode != http.StatusOK {
+			return fmt.Errorf("cannot download a file: %s", res.Status)
+		}
 
 		if params.ToStdout {
 			_, err = io.Copy(os.Stdout, res.Body)
