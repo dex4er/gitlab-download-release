@@ -69,6 +69,7 @@ func main() {
 	}
 
 	rootCmd.Flags().StringVarP(&params.Download, "download", "d", "", "`NAME` of asset to download (default is all)")
+	rootCmd.Flags().BoolVarP(&params.DryRun, "dry-run", "n", false, "dry run: does not download")
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringVarP(&params.GitlabUrl, "gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
 	rootCmd.Flags().BoolVarP(&params.List, "list", "l", false, "List releases or assets rather than download")
@@ -89,6 +90,7 @@ func main() {
 
 type downloadReleaseParams struct {
 	Download       string
+	DryRun         bool
 	GitlabTokenEnv string
 	GitlabUrl      string
 	List           bool
@@ -132,12 +134,21 @@ func downloadRelease(params downloadReleaseParams) error {
 		return nil
 	}
 
+	dryRunMsg := ""
+	if params.DryRun {
+		dryRunMsg = " (dry run)"
+	}
+
 	for _, link := range assets.Links {
 		if params.Download != "" && link.Name != params.Download {
 			continue
 		}
 
-		fmt.Println("Downloading", link.Name, "from", link.URL)
+		fmt.Printf("Downloading %s from %s%s\n", link.Name, link.URL, dryRunMsg)
+
+		if params.DryRun {
+			continue
+		}
 
 		req, err := http.NewRequest("GET", link.URL, nil)
 		if err != nil {
