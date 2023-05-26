@@ -25,15 +25,15 @@ func coalesce(values ...string) string {
 }
 
 // Return release by name
-func releaseByName(rels []*gitlab.Release, name string) *gitlab.Release {
+func releaseByTagName(rels []*gitlab.Release, tag string) *gitlab.Release {
 	if len(rels) == 0 {
 		return nil
 	}
-	if name == "" {
+	if tag == "" {
 		return rels[0]
 	}
 	for _, rel := range rels {
-		if rel.Name == name {
+		if rel.TagName == tag {
 			return rel
 		}
 	}
@@ -78,7 +78,7 @@ func main() {
 	rootCmd.Flags().BoolVarP(&params.List, "list", "l", false, "list releases or assets or URL of asset rather than download")
 	rootCmd.Flags().BoolVarP(&params.ToStdout, "to-stdout", "O", false, "send to stdout rather than to file (only single file)")
 	rootCmd.Flags().StringVarP(&params.Project, "project", "p", os.Getenv("CI_PROJECT_ID"), "`PROJECT` with releases")
-	rootCmd.Flags().StringVarP(&params.Release, "release", "r", "", "`RELEASE` to download (default is last)")
+	rootCmd.Flags().StringVarP(&params.Release, "release", "r", "", "`RELEASE` tag to download (default is last release)")
 
 	rootCmd.Flags().StringVar(&genMarkdown, "gen-markdown", "", "Generate Markdown documentation")
 
@@ -118,12 +118,12 @@ func downloadRelease(params downloadReleaseParams) error {
 
 	if params.List && params.Release == "" {
 		for _, rel := range rels {
-			fmt.Println(rel.Name)
+			fmt.Println(rel.TagName)
 		}
 		return nil
 	}
 
-	rel := releaseByName(rels, params.Release)
+	rel := releaseByTagName(rels, params.Release)
 	if rel == nil {
 		return errors.New("no release found")
 	}
@@ -178,7 +178,7 @@ func downloadRelease(params downloadReleaseParams) error {
 		}
 		defer res.Body.Close()
 
-		if req.Response.StatusCode != http.StatusOK {
+		if res.StatusCode != http.StatusOK {
 			return fmt.Errorf("cannot download a file: %s", res.Status)
 		}
 

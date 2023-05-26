@@ -23,7 +23,7 @@ gitlab-download-release [flags]
   -h, --help                   help for gitlab-download-release
   -l, --list                   list releases or assets or URL of asset rather than download
   -p, --project PROJECT        PROJECT with releases
-  -r, --release RELEASE        RELEASE to download (default is last)
+  -r, --release RELEASE        RELEASE tag to download (default is last release)
   -O, --to-stdout              send to stdout rather than to file (only single file)
   -v, --version                version for gitlab-download-release
 ```

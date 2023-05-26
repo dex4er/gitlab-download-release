@@ -1,0 +1,25 @@
+name: Test
+
+on:
+  - pull_request
+  - push
+  - workflow_dispatch
+
+jobs:
+  trunk:
+    name: Trunk Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        run: make download build
+
+      - name: Test
+        run: |
+          mkdir release
+          cd release
+          ./gitlab-download-release -p dex4er/gitlab-download-release
+          sha256sum -c checksums.txt
