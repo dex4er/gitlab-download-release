@@ -25,3 +25,31 @@ gitlab-download-release [flags]
   -r, --release RELEASE        RELEASE to download (default is last)
   -v, --version                version for gitlab-download-release
 ```
+
+## .gitlab-ci.yml
+
+Example:
+
+```yaml
+stages:
+  - download
+
+download:
+  stage: download
+  image:
+    name: dex4er/gitlab-download-release
+    entrypoint: [""]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:download\r\e[0KBuild"
+    - mkdir release
+    - cd release
+    - gitlab-download-release # by default uses GITHUB_TOKEN and down
+    - sha256sum -c checksums.txt
+    - echo -e "\e[0Ksection_end:`date +%s`:download\r\e[0K"
+  artifacts:
+    paths:
+      - release/
+    expire_in: 1 week
+```
