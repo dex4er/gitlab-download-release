@@ -1,11 +1,9 @@
-name: Docker
+name: Snapshot
 
 on:
   push:
     branches:
       - "**"
-    tags:
-      - v*
     paths-ignore:
       - .dockerignore
       - .editorconfig
@@ -70,13 +68,25 @@ jobs:
         id: version
         run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
 
+      - name: Build binary
+        run: make download build GOOS=linux GOARCH="${{ matrix.arch }}"
+
+      - name: Test binary
+        run: |
+          mkdir release
+          cd release
+          ../gitlab-download-release -p dex4er/gitlab-download-release -v
+          ../gitlab-download-release -p dex4er/gitlab-download-release -l
+          ../gitlab-download-release -p dex4er/gitlab-download-release
+          sha256sum -c checksums.txt
+
       - name: Build image
-        run: make download build image GOOS=linux GOARCH="${{ matrix.arch }}" PLATFORM="${{ matrix.platform }}"
+        run: make image PLATFORM="${{ matrix.platform }}"
 
       - name: Inspect container image
         run: docker inspect "localhost:5000/$IMAGE_NAME" | jq -C .
 
-      - name: Test built image
+      - name: Test image
         run: make test-image PLATFORM="${{ matrix.platform }}"
 
       - name: Push to Docker
@@ -120,13 +130,3 @@ jobs:
         run: |
           docker manifest create ${DOCKER_REPO}:v${VERSION} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:v${VERSION}
-
-      - name: Tag mutliarch image - additional
-        if: contains(needs.build.outputs.version, '-SNAPSHOT-') != true
-        run: |
-          docker manifest create ${DOCKER_REPO}:v${VERSION%.*} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
-          docker manifest push ${DOCKER_REPO}:v${VERSION%.*}
-          docker manifest create ${DOCKER_REPO}:v${VERSION%%.*} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
-          docker manifest push ${DOCKER_REPO}:v${VERSION%%.*}
-          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
-          docker manifest push ${DOCKER_REPO}:latest

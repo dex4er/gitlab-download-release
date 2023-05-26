@@ -10,6 +10,124 @@ permissions:
   contents: write
 
 jobs:
+  build:
+    name: Build
+
+    permissions:
+      id-token: write
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Prepare environment variables
+        run: cat .github/.env >> $GITHUB_ENV
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
+
+      - name: Set up QEMU
+        if: contains(matrix.platform, 'linux/arm64')
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Calculate new version number
+        id: version
+        run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
+
+      - name: Build binary
+        run: make download build GOOS=linux GOARCH="${{ matrix.arch }}"
+
+      - name: Test binary
+        run: |
+          mkdir release
+          cd release
+          ../gitlab-download-release -p dex4er/gitlab-download-release -v
+          ../gitlab-download-release -p dex4er/gitlab-download-release -l
+          ../gitlab-download-release -p dex4er/gitlab-download-release
+          sha256sum -c checksums.txt
+
+      - name: Build image
+        run: make image PLATFORM="${{ matrix.platform }}"
+
+      - name: Inspect container image
+        run: docker inspect "localhost:5000/$IMAGE_NAME" | jq -C .
+
+      - name: Test image
+        run: make test-image PLATFORM="${{ matrix.platform }}"
+
+      - name: Push to Docker
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        run: make push DOCKER_REPO="${DOCKER_REPO}" PLATFORM="${{ matrix.platform }}"
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+
+  tag:
+    name: Tag
+
+    needs: build
+
+    permissions:
+      id-token: write
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Prepare environment variables
+        run: cat .github/.env >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Reuse new version number
+        run: echo VERSION=${{ needs.build.outputs.version }} | tee -a $GITHUB_ENV
+
+      - name: Tag multiarch images
+        run: |
+          docker manifest create ${DOCKER_REPO}:v${VERSION} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:v${VERSION}
+          docker manifest create ${DOCKER_REPO}:v${VERSION%.*} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:v${VERSION%.*}
+          docker manifest create ${DOCKER_REPO}:v${VERSION%%.*} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:v${VERSION%%.*}
+          docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${DOCKER_REPO}:latest
+
   release:
     runs-on: ubuntu-latest
 
