@@ -68,8 +68,8 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&params.File, "file", "f", "", "`NAME` of asset to download (default is all)")
 	rootCmd.Flags().BoolVarP(&params.DryRun, "dry-run", "n", false, "do not download and print what might be downloaded")
+	rootCmd.Flags().StringVarP(&params.File, "file", "f", "", "`NAME` of asset to download (default is all)")
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringVarP(&params.GitlabUrl, "gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
 	rootCmd.Flags().BoolVarP(&params.List, "list", "l", false, "list releases or assets or URL of asset rather than download")
