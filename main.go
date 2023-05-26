@@ -68,11 +68,11 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&params.File, "download", "d", "", "`NAME` of asset to download (default is all)")
-	rootCmd.Flags().BoolVarP(&params.DryRun, "dry-run", "n", false, "only print what might be downloaded")
+	rootCmd.Flags().StringVarP(&params.File, "file", "f", "", "`NAME` of asset to download (default is all)")
+	rootCmd.Flags().BoolVarP(&params.DryRun, "dry-run", "n", false, "do not download and print what might be downloaded")
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringVarP(&params.GitlabUrl, "gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
-	rootCmd.Flags().BoolVarP(&params.List, "list", "l", false, "list releases or assets rather than download")
+	rootCmd.Flags().BoolVarP(&params.List, "list", "l", false, "list releases or assets or URL of asset rather than download")
 	rootCmd.Flags().StringVarP(&params.Project, "project", "p", os.Getenv("CI_PROJECT_ID"), "`PROJECT` with releases")
 	rootCmd.Flags().StringVarP(&params.Release, "release", "r", "", "`RELEASE` to download (default is last)")
 
@@ -128,7 +128,7 @@ func downloadRelease(params downloadReleaseParams) error {
 		return errors.New("release has no downloads in the assets")
 	}
 
-	if params.List {
+	if params.List && params.File == "" {
 		for _, link := range assets.Links {
 			fmt.Println(link.Name)
 		}
@@ -142,6 +142,11 @@ func downloadRelease(params downloadReleaseParams) error {
 
 	for _, link := range assets.Links {
 		if params.File != "" && link.Name != params.File {
+			continue
+		}
+
+		if params.List {
+			fmt.Println(link.URL)
 			continue
 		}
 
