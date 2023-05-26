@@ -70,6 +70,8 @@ jobs:
           ../gitlab-download-release -p dex4er/gitlab-download-release -l
           ../gitlab-download-release -p dex4er/gitlab-download-release
           sha256sum -c checksums.txt
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
 
       - name: Build image
         run: make image PLATFORM="${{ matrix.platform }}"
