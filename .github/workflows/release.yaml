@@ -63,6 +63,7 @@ jobs:
         run: make download build GOOS=linux GOARCH="${{ matrix.arch }}"
 
       - name: Test binary
+        if: github.ref != 'refs/tags/v0.1.0'
         run: |
           mkdir release
           cd release
@@ -131,9 +132,12 @@ jobs:
           docker manifest push ${DOCKER_REPO}:latest
 
   release:
-    runs-on: ubuntu-latest
+    name: Release
 
-    name: Release binaries
+    needs:
+      - tag
+
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
