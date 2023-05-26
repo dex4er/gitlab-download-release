@@ -12,11 +12,9 @@ RUN make download
 COPY . .
 RUN make clean build VERSION=$VERSION
 
-FROM alpine
+FROM alpine:3.18.0
 
 WORKDIR /usr/local/bin
-
-RUN apk add bash
 
 COPY --from=build /src/gitlab-download-release .
 

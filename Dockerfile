@@ -1,12 +1,10 @@
-FROM alpine
+FROM alpine:3.18.0
 
 ARG VERSION
 ARG REVISION
 ARG BUILDDATE
 
 WORKDIR /usr/local/bin
-
-RUN apk --no-cache add bash
 
 COPY gitlab-download-release .
 
