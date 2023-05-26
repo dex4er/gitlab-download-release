@@ -6,7 +6,7 @@ stages:
 download:
   stage: download
   # rules:
-  #   - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  #   - if: $TEST_CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
   when: delayed
   start_in: 5 minutes
   image: debian:bullseye
@@ -56,14 +56,32 @@ release:
   needs:
     - download
   # rules:
-  #   - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  #   - if: $TEST_CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  variables:
+    TEST_TEST_CI_COMMIT_TAG: v0.0.1
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   script:
-    - echo "Release $CI_COMMIT_TAG"
+    - echo "Release $TEST_CI_COMMIT_TAG"
   release:
-    tag_name: $CI_COMMIT_TAG
-    name: Release $CI_COMMIT_TAG
-    description: Downloaded from https://github.com/dex4er/gitlab-download-release/releases/tag/$CI_COMMIT_TAG
+    tag_name: $TEST_CI_COMMIT_TAG
+    name: Release $TEST_CI_COMMIT_TAG
+    description: Downloaded from https://github.com/dex4er/gitlab-download-release/releases/tag/$TEST_CI_COMMIT_TAG
+    assets:
+      links:
+        - name: checksums.txt
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/checksums.txt
+        - name: gitlab-download-release-darwin-amd64
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/gitlab-download-release-darwin-amd64
+        - name: gitlab-download-release-darwin-arm64
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/gitlab-download-release-darwin-arm64
+        - name: gitlab-download-release-linux-amd64
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/gitlab-download-release-linux-amd64
+        - name: gitlab-download-release-linux-arm64
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/gitlab-download-release-linux-arm64
+        - name: gitlab-download-release-windows-amd64.exe
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/gitlab-download-release-windows-amd64.exe
+        - name: gitlab-download-release-windows-arm64.exe
+          url: $CI_PROJECT_URL/-/releases/$TEST_CI_COMMIT_TAG/downloads/gitlab-download-release-windows-arm64.exe
 
 test:
   stage: test
