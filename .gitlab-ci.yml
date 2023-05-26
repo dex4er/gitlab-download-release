@@ -1,0 +1,84 @@
+stages:
+  - download
+  - release
+  - test
+
+download:
+  stage: download
+  # rules:
+  #   - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  when: delayed
+  start_in: 5 minutes
+  image: debian:bullseye
+  variables:
+    ASDF_DIR: $CI_PROJECT_DIR/.cache/asdf
+    ASDF_DATA_DIR: $CI_PROJECT_DIR/.cache/asdf
+    ASDF_VERSION: v0.11.3
+    GIT_STRATEGY: none
+  before_script:
+    - echo -e "\e[0Ksection_start:`date +%s`:apt[collapsed=true]\r\e[0KInstalling APT packages"
+    - mkdir -p .cache/apt/keys .cache/apt/cache/archives/partial .cache/apt/state/lists/partial
+    - |
+      apt-get -q -y -o Dir::Cache=$CI_PROJECT_DIR/.cache/apt/cache -o Dir::State=$CI_PROJECT_DIR/.cache/apt/state \
+        update
+    - |
+      apt-get -q -y -o Dir::Cache=$CI_PROJECT_DIR/.cache/apt/cache -o Dir::State=$CI_PROJECT_DIR/.cache/apt/state --no-install-recommends \
+        install ca-certificates curl git make procps unzip xz-utils
+    - echo -e "\e[0Ksection_end:`date +%s`:apt\r\e[0K"
+    #
+    - echo -e "\e[0Ksection_start:`date +%s`:asdf[collapsed=true]\r\e[0KInstalling asdf packages"
+    - |
+      if ! [[ -d $ASDF_DIR ]]; then
+        git clone https://github.com/asdf-vm/asdf.git $ASDF_DIR --branch $ASDF_VERSION \
+          --quiet -c advice.detachedHead=false
+      fi
+    - . $ASDF_DIR/asdf.sh
+    - asdf plugin add github-cli
+    - asdf install github-cli latest
+    - asdf global github-cli latest
+    - echo -e "\e[0Ksection_end:`date +%s`:asdf\r\e[0K"
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:download\r\e[0KDownload"
+    - gh release download -R dex4er/gitlab-download-release -p '*' -D release
+    - echo -e "\e[0Ksection_end:`date +%s`:download\r\e[0K"
+  artifacts:
+    paths:
+      - release/
+    expire_in: 1 week
+  cache:
+    - key: job-$CI_JOB_NAME
+      paths:
+        - .cache/apt/
+        - .cache/asdf/
+
+release:
+  stage: release
+  needs:
+    - download
+  # rules:
+  #   - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script:
+    - echo "Release $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: Release $CI_COMMIT_TAG
+    description: Downloaded from https://github.com/dex4er/gitlab-download-release/releases/tag/$CI_COMMIT_TAG
+
+test:
+  stage: test
+  needs:
+    - job: release
+      optional: true
+  image:
+    name: dex4er/gitlab-download-release
+    entrypoint: [""]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:download\r\e[0KDownload"
+    - mkdir release
+    - cd release
+    - gitlab-download-release
+    - sha256sum -c checksums.txt
+    - echo -e "\e[0Ksection_end:`date +%s`:download\r\e[0K"
