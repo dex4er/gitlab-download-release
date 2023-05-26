@@ -16,13 +16,15 @@ gitlab-download-release [flags]
 ### Options
 
 ```console
-  -d, --download NAME          NAME of asset to download (default is all)
+  -n, --dry-run                do not download and print what might be downloaded
+  -f, --file NAME              NAME of asset to download (default is all)
   -t, --gitlab-token-env VAR   name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
   -g, --gitlab-url URL         URL of the Gitlab instance (default "https://gitlab.com")
   -h, --help                   help for gitlab-download-release
-  -l, --list                   List releases or assets rather than download
+  -l, --list                   list releases or assets or URL of asset rather than download
   -p, --project PROJECT        PROJECT with releases
   -r, --release RELEASE        RELEASE to download (default is last)
+  -O, --to-stdout              send to stdout rather than to file (only single file)
   -v, --version                version for gitlab-download-release
 ```
 

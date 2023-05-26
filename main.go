@@ -58,7 +58,10 @@ func main() {
 				return nil
 			}
 			if params.Project == "" {
-				return fmt.Errorf("no project provided")
+				return fmt.Errorf("no project argument was provided")
+			}
+			if params.ToStdout && params.File == "" {
+				return fmt.Errorf("no file argument was provided")
 			}
 			if err := downloadRelease(params); err != nil {
 				fmt.Println("Error:", err)
@@ -73,6 +76,7 @@ func main() {
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringVarP(&params.GitlabUrl, "gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
 	rootCmd.Flags().BoolVarP(&params.List, "list", "l", false, "list releases or assets or URL of asset rather than download")
+	rootCmd.Flags().BoolVarP(&params.ToStdout, "to-stdout", "O", false, "send to stdout rather than to file (only single file)")
 	rootCmd.Flags().StringVarP(&params.Project, "project", "p", os.Getenv("CI_PROJECT_ID"), "`PROJECT` with releases")
 	rootCmd.Flags().StringVarP(&params.Release, "release", "r", "", "`RELEASE` to download (default is last)")
 
@@ -96,6 +100,7 @@ type downloadReleaseParams struct {
 	List           bool
 	Project        string
 	Release        string
+	ToStdout       bool
 }
 
 func downloadRelease(params downloadReleaseParams) error {
@@ -150,7 +155,9 @@ func downloadRelease(params downloadReleaseParams) error {
 			continue
 		}
 
-		fmt.Printf("Downloading %s from %s%s\n", link.Name, link.URL, dryRunMsg)
+		if !params.ToStdout {
+			fmt.Printf("Downloading %s from %s%s\n", link.Name, link.URL, dryRunMsg)
+		}
 
 		if params.DryRun {
 			continue
@@ -171,15 +178,22 @@ func downloadRelease(params downloadReleaseParams) error {
 		}
 		defer res.Body.Close()
 
-		file, err := os.Create(link.Name)
-		if err != nil {
-			return fmt.Errorf("cannot create a file: %w", err)
-		}
-		defer file.Close()
+		if params.ToStdout {
+			_, err = io.Copy(os.Stdout, res.Body)
+			if err != nil {
+				return fmt.Errorf("cannot write to stdout: %w", err)
+			}
+		} else {
+			file, err := os.Create(link.Name)
+			if err != nil {
+				return fmt.Errorf("cannot create a file: %w", err)
+			}
+			defer file.Close()
 
-		_, err = io.Copy(file, res.Body)
-		if err != nil {
-			return fmt.Errorf("cannot write to file: %w", err)
+			_, err = io.Copy(file, res.Body)
+			if err != nil {
+				return fmt.Errorf("cannot write to file: %w", err)
+			}
 		}
 	}
 
