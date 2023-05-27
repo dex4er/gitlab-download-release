@@ -69,7 +69,10 @@ jobs:
         run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
 
       - name: Build binary
-        run: make download build GOOS=linux GOARCH="${{ matrix.arch }}"
+        run: make download build
+        env: 
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
 
       - name: Test binary
         run: |
