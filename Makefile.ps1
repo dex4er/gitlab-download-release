@@ -26,29 +26,29 @@ foreach ($arg in $args) {
   }
 }
 
-$env:DOCKER = $env:DOCKER ?? "docker"
-$env:GO = $env:GO ?? "go"
-$env:GORELEASER = $env:GORELEASER ?? "goreleaser"
+if (-not $env:DOCKER) { $env:DOCKER = "docker" }
+if (-not $env:GO) { $env:GO = "go" }
+if (-not $env:GORELEASER) { $env:GORELEASER = "goreleaser" }
 
 if ($env:OS -eq "Windows_NT") {
-  $env:BIN = $env:BIN ?? "gitlab-download-release.exe"
+  if (-not $env:BIN) { $env:BIN = "gitlab-download-release.exe" }
   if ($env:LOCALAPPDATA) {
-    $env:BINDIR = $env:BINDIR ?? "$env:LOCALAPPDATA\Microsoft\WindowsApps"
+    if (-not $env:BINDIR) { $env:BINDIR = "$env:LOCALAPPDATA\Microsoft\WindowsApps" }
   }
   else {
-    $env:BINDIR = $env:BINDIR ?? "C:\Windows\System32"
+    if (-not $env:BINDIR) { $env:BINDIR = "C:\Windows\System32" }
   }
 }
 else {
-  $env:BIN = $env:BIN ?? "gitlab-download-release"
+  if (-not $env:BIN) { $env:BIN = "gitlab-download-release" }
   if (Test-Path "$env:HOME\.local\bin") {
-    $env:BINDIR = $env:BINDIR ?? "$env:HOME\.local\bin"
+    if (-not $env:BINDIR) { $env:BINDIR = "$env:HOME\.local\bin" }
   }
   elseif (Test-Path "$env:HOME\bin") {
-    $env:BINDIR = $env:BINDIR ?? "$env:HOME\bin"
+    if (-not $env:BINDIR) { $env:BINDIR = "$env:HOME\bin" }
   }
   else {
-    $env:BINDIR = $env:BINDIR ?? "/usr/local/bin"
+    if (-not $env:BINDIR) { $env:BINDIR = "/usr/local/bin" }
   }
 }
 
@@ -87,9 +87,9 @@ function Get-Builddate {
   return $utc.tostring("yyyy-MM-ddTHH:mm:ssZ")
 }
 
-$env:VERSION = $env:VERSION ?? (& get-version)
-$env:REVISION = $env:REVISION ?? (& get-revision)
-$env:BUILDDATE = $env:BUILDDATE ?? (& get-builddate)
+if (-not $env:VERSION) { $env:VERSION = (& get-version) }
+if (-not $env:REVISION) { $env:REVISION = (& get-revision) }
+if (-not $env:BUILDDATE) { $env:BUILDDATE = (& get-builddate) }
 
 function Invoke-CommandWithEcho {
   param (
@@ -97,9 +97,9 @@ function Invoke-CommandWithEcho {
     [string[]]$Arguments
   )
   Write-Host $Command $Arguments
-  $processInfo = Start-Process -FilePath $Command -ArgumentList $Arguments -PassThru
+  $processInfo = Start-Process -FilePath $Command -ArgumentList $Arguments -NoNewWindow -PassThru
   $processInfo.WaitForExit()
-  if ($processInfo.ExitCode -ne 0) {
+  if ($processInfo.ExitCode -and $processInfo.ExitCode -ne 0) {
     Write-Host "make: *** [$currentTarget] Error $($processInfo.ExitCode)"
     break
   }
@@ -188,25 +188,27 @@ function Invoke-Target-Builddate {
   Write-Host $env:BUILDDATE
 }
 
-$env:DOCKERFILE = $env:DOCKERFILE ?? "Dockerfile"
-$env:IMAGE_NAME = $env:IMAGE_NAME ?? "gitlab-download-release"
-$env:LOCAL_REPO = $env:LOCAL_REPO ?? "localhost:5000/$env:IMAGE_NAME"
-$env:DOCKER_REPO = $env:DOCKER_REPO ?? "localhost:5000/$env:IMAGE_NAME"
+if (-not $env:DOCKERFILE) { $env:DOCKERFILE = "Dockerfile" }
+if (-not $env:IMAGE_NAME) { $env:IMAGE_NAME = "gitlab-download-release" }
+if (-not $env:LOCAL_REPO) { $env:LOCAL_REPO = "localhost:5000/$env:IMAGE_NAME" }
+if (-not $env:DOCKER_REPO) { $env:DOCKER_REPO = "localhost:5000/$env:IMAGE_NAME" }
 
-if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
-  $env:PLATFORM = "linux/arm64"
-}
-elseif ((uname -m) -eq "arm64") {
-  $env:PLATFORM = "linux/arm64"
-}
-elseif ((uname -m) -eq "aarch64") {
-  $env:PLATFORM = "linux/arm64"
-}
-elseif ((uname -s) -match "ARM64") {
-  $env:PLATFORM = "linux/arm64"
-}
-else {
-  $env:PLATFORM = "linux/amd64"
+if (-not $env:PLATFORM) {
+  if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
+    $env:PLATFORM = "linux/arm64"
+  }
+  elseif ((uname -m) -eq "arm64") {
+    $env:PLATFORM = "linux/arm64"
+  }
+  elseif ((uname -m) -eq "aarch64") {
+    $env:PLATFORM = "linux/arm64"
+  }
+  elseif ((uname -s) -match "ARM64") {
+    $env:PLATFORM = "linux/arm64"
+  }
+  else {
+    $env:PLATFORM = "linux/amd64"
+  }
 }
 
 ## TARGET image Build a local image without publishing artifacts.
