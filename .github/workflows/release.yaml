@@ -61,7 +61,7 @@ jobs:
 
       - name: Build binary
         run: make download build
-        env: 
+        env:
           GOOS: linux
           GOARCH: ${{ matrix.arch }}
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env pwsh
 
+$env:BIN = "gitlab-download-release"
+
+$env:EXE = ""
+
 ## Read .env
 if (Test-Path -Path ".env" -PathType Leaf) {
   Get-Content -Path ".env" | ForEach-Object {
@@ -28,12 +32,13 @@ if (-not $env:DOCKER) { $env:DOCKER = "docker" }
 if (-not $env:GO) { $env:GO = "go" }
 if (-not $env:GORELEASER) { $env:GORELEASER = "goreleaser" }
 
-$BIN = "gitlab-download-release"
-
-if ($env:GOOS -eq "windows") {
-  $EXE = ".exe"
-} else {
-  $EXE = ""
+if (-not $env:EXE) {
+  if ($env:GOOS -eq "windows") {
+    $env:EXE = ".exe"
+  }
+  else {
+    $env:EXE = ""
+  }
 }
 
 if ($env:OS -eq "Windows_NT") {
@@ -145,17 +150,17 @@ function Invoke-Target-Goreleaser {
 
 ## TARGET install Build and install app binary
 function Invoke-Target-Install {
-  if (-not (Test-Path -Path "$BIN$EXE" -PathType Leaf)) {
+  if (-not (Test-Path -Path "$env:BIN$env:EXE" -PathType Leaf)) {
     Invoke-Target-Build
   }
   Write-Target "install"
-  Invoke-ExpressionWithEcho "Copy-Item -Path '$BIN$EXE' -Destination $env:BINDIR -Force"
+  Invoke-ExpressionWithEcho "Copy-Item -Path '$env:BIN$env:EXE' -Destination $env:BINDIR -Force"
 }
 
 ## TARGET uninstall Uninstall app binary
 function Invoke-Target-Uninstall {
   Write-Target "uninstall"
-  $path = Join-Path $env:BINDIR "$BIN$EXE"
+  $path = Join-Path $env:BINDIR "$env:BIN$env:EXE"
   Invoke-ExpressionWithEcho -Command "Remove-Item $path -Force -ErrorAction SilentlyContinue"
 }
 
@@ -180,7 +185,7 @@ function Invoke-Target-Upgrade {
 ## TARGET clean Clean working directory
 function Invoke-Target-Clean {
   Write-Target "clean"
-  Invoke-ExpressionWithEcho -Command "Remove-Item '$BIN$EXE' -Force -ErrorAction SilentlyContinue"
+  Invoke-ExpressionWithEcho -Command "Remove-Item '$env:BIN$env:EXE' -Force -ErrorAction SilentlyContinue"
   Invoke-ExpressionWithEcho -Command "Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue"
 }
 

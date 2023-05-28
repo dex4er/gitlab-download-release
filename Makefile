@@ -1,3 +1,11 @@
+BIN := gitlab-download-release
+
+ifeq ($(GOOS),windows)
+EXE := .exe
+else
+EXE :=
+endif
+
 ifneq (,$(wildcard .env))
 	include .env
   export
@@ -12,14 +20,6 @@ INSTALL = install
 PRINTF = printf
 RM = rm
 SORT = sort
-
-BIN := gitlab-download-release
-
-ifeq ($(GOOS),windows)
-EXE := .exe
-else
-EXE :=
-endif
 
 ifeq ($(OS),Windows_NT)
 ifneq (,$(LOCALAPPDATA))
