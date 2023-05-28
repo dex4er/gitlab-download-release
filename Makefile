@@ -1,11 +1,5 @@
 BIN := gitlab-download-release
 
-ifeq ($(GOOS),windows)
-EXE := .exe
-else
-EXE :=
-endif
-
 ifneq (,$(wildcard .env))
 	include .env
   export
@@ -41,9 +35,6 @@ VERSION = $(shell ( git describe --tags --exact-match 2>/dev/null || ( git descr
 REVISION = $(shell git rev-parse HEAD)
 BUILDDATE = $(shell TZ=GMT date '+%Y-%m-%dT%R:%SZ')
 
-GOBUILDFLAGS = -trimpath
-GOBUILDLDFLAGS = -s -w -X main.version=$(VERSION)
-
 CGO_ENABLED = 0
 export CGO_ENABLED
 
@@ -55,7 +46,7 @@ help:
 .PHONY: build
 build: ## Build app binary for single target
 	$(call print-target)
-	$(GO) build $(GOBUILDFLAGS) -ldflags="$(GOBUILDLDFLAGS)"
+	$(GO) build -trimpath -ldflags="-s -w -X main.version=$(VERSION)"
 
 .PHONY: goreleaser
 goreleaser: ## Build app binary for all targets

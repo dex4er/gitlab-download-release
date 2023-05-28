@@ -2,8 +2,6 @@
 
 $env:BIN = "gitlab-download-release"
 
-$env:EXE = ""
-
 ## Read .env
 if (Test-Path -Path ".env" -PathType Leaf) {
   Get-Content -Path ".env" | ForEach-Object {
@@ -32,13 +30,17 @@ if (-not $env:DOCKER) { $env:DOCKER = "docker" }
 if (-not $env:GO) { $env:GO = "go" }
 if (-not $env:GORELEASER) { $env:GORELEASER = "goreleaser" }
 
-if (-not $env:EXE) {
-  if ($env:GOOS -eq "windows") {
-    $env:EXE = ".exe"
-  }
-  else {
-    $env:EXE = ""
-  }
+if ($env:GOOS) {
+  $GOOS = $env:GOOS
+} else {
+  $GOOS = & $env:GO env GOOS
+}
+
+if ($GOOS -eq "windows") {
+  $env:EXE = ".exe"
+}
+else {
+  $env:EXE = ""
 }
 
 if ($env:OS -eq "Windows_NT") {
@@ -101,9 +103,6 @@ function Get-Builddate {
 if (-not $env:VERSION) { $env:VERSION = (& get-version) }
 if (-not $env:REVISION) { $env:REVISION = (& get-revision) }
 if (-not $env:BUILDDATE) { $env:BUILDDATE = (& get-builddate) }
-
-if (-not $env:GOBUILDFLAGS) { $env:GOBUILDFLAGS = "-trimpath" }
-if (-not $env:GOBUILDLDFLAGS) { $env:GOBUILDLDFLAGS = "-s -w -X main.version=$env:VERSION" }
 
 if (-not $env:CGO_ENABLED) { $env:CGO_ENABLED = "0" }
 
