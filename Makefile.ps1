@@ -1,7 +1,5 @@
 #!/usr/bin/env pwsh
 
-$env:CGO_ENABLED = "0"
-
 ## Read .env
 if (Test-Path -Path ".env" -PathType Leaf) {
   Get-Content -Path ".env" | ForEach-Object {
@@ -29,6 +27,14 @@ foreach ($arg in $args) {
 if (-not $env:DOCKER) { $env:DOCKER = "docker" }
 if (-not $env:GO) { $env:GO = "go" }
 if (-not $env:GORELEASER) { $env:GORELEASER = "goreleaser" }
+
+$BIN = "gitlab-download-release"
+
+if ($env:GOOS -eq "windows") {
+  $EXE = ".exe"
+} else {
+  $EXE = ""
+}
 
 if ($env:OS -eq "Windows_NT") {
   if (-not $env:BIN) { $env:BIN = "gitlab-download-release.exe" }
@@ -91,6 +97,11 @@ if (-not $env:VERSION) { $env:VERSION = (& get-version) }
 if (-not $env:REVISION) { $env:REVISION = (& get-revision) }
 if (-not $env:BUILDDATE) { $env:BUILDDATE = (& get-builddate) }
 
+if (-not $env:GOBUILDFLAGS) { $env:GOBUILDFLAGS = "-trimpath" }
+if (-not $env:GOBUILDLDFLAGS) { $env:GOBUILDLDFLAGS = "-s -w -X main.version=$env:VERSION" }
+
+if (-not $env:CGO_ENABLED) { $env:CGO_ENABLED = "0" }
+
 function Invoke-CommandWithEcho {
   param (
     [string]$Command,
@@ -123,54 +134,54 @@ function Write-Target {
 ## TARGET build Build app binary for single target
 function Invoke-Target-Build {
   Write-Target "build"
-  Invoke-CommandWithEcho -Command $env:GO -Arguments "build", "-trimpath", "-ldflags=`"-s -w -X main.version=$env:VERSION`""
+  Invoke-CommandWithEcho $env:GO -Arguments "build", "-trimpath", "-ldflags=`"-s -w -X main.version=$env:VERSION`""
 }
 
 ## TARGET goreleaser Build app binary for all targets
 function Invoke-Target-Goreleaser {
   Write-Target "goreleaser"
-  Invoke-CommandWithEcho -Command $env:GORELEASER -Arguments "release", "--auto-snapshot", "--clean", "--skip-publish"
+  Invoke-CommandWithEcho $env:GORELEASER -Arguments "release", "--auto-snapshot", "--clean", "--skip-publish"
 }
 
 ## TARGET install Build and install app binary
 function Invoke-Target-Install {
-  if (-not (Test-Path -Path $env:BIN -PathType Leaf)) {
+  if (-not (Test-Path -Path "$BIN$EXE" -PathType Leaf)) {
     Invoke-Target-Build
   }
   Write-Target "install"
-  Invoke-ExpressionWithEcho -Command "Copy-Item -Path $env:BIN -Destination $env:BINDIR -Force"
+  Invoke-ExpressionWithEcho "Copy-Item -Path '$BIN$EXE' -Destination $env:BINDIR -Force"
 }
 
 ## TARGET uninstall Uninstall app binary
 function Invoke-Target-Uninstall {
   Write-Target "uninstall"
-  $path = Join-Path $env:BINDIR $env:BIN
-  Invoke-ExpressionWithEcho -Command "Remove-Item $path -Force"
+  $path = Join-Path $env:BINDIR "$BIN$EXE"
+  Invoke-ExpressionWithEcho -Command "Remove-Item $path -Force -ErrorAction SilentlyContinue"
 }
 
 ## TARGET download Download Go modules
 function Invoke-Target-Download {
   Write-Target "download"
-  Invoke-CommandWithEcho -Command $env:GO -Arguments "mod", "download"
+  Invoke-CommandWithEcho $env:GO -Arguments "mod", "download"
 }
 
 ## TARGET tidy Tidy Go modules
 function Invoke-Target-Tidy {
   Write-Target "tidy"
-  Invoke-CommandWithEcho -Command $env:GO -Arguments "mod", "tidy"
+  Invoke-CommandWithEcho $env:GO -Arguments "mod", "tidy"
 }
 
 ## TARGET upgrade Upgrade Go modules
 function Invoke-Target-Upgrade {
   Write-Target "upgrade"
-  Invoke-CommandWithEcho -Command $env:GO -Arguments "get", "-u"
+  Invoke-CommandWithEcho $env:GO -Arguments "get", "-u"
 }
 
 ## TARGET clean Clean working directory
 function Invoke-Target-Clean {
   Write-Target "clean"
+  Invoke-ExpressionWithEcho -Command "Remove-Item '$BIN$EXE' -Force -ErrorAction SilentlyContinue"
   Invoke-ExpressionWithEcho -Command "Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue"
-  Invoke-ExpressionWithEcho -Command "Remove-Item $env:BIN -Force -ErrorAction SilentlyContinue"
 }
 
 ## TARGET version Show version
@@ -214,7 +225,7 @@ if (-not $env:PLATFORM) {
 ## TARGET image Build a local image without publishing artifacts.
 function Invoke-Target-Image {
   Write-Target "image"
-  Invoke-CommandWithEcho -Command $env:DOCKER -Arguments "buildx", "build", "--file=$env:DOCKERFILE",
+  Invoke-CommandWithEcho $env:DOCKER -Arguments "buildx", "build", "--file=$env:DOCKERFILE",
   "--platform=$env:PLATFORM",
   "--build-arg", "VERSION=$env:VERSION",
   "--build-arg", "REVISION=$env:REVISION",
@@ -227,14 +238,14 @@ function Invoke-Target-Image {
 ## TARGET push Publish to container registry.
 function Invoke-Target-Push {
   Write-Target "push"
-  Invoke-CommandWithEcho -Command $env:DOCKER -Arguments "tag", $env:LOCAL_REPO, "$($env:DOCKER_REPO):v$($env:VERSION)-$($env:PLATFORM -replace '/','-')"
-  Invoke-CommandWithEcho -Command $env:DOCKER -Arguments "push", "$($env:DOCKER_REPO):v$($env:VERSION)-$($env:PLATFORM -replace '/','-')"
+  Invoke-CommandWithEcho $env:DOCKER -Arguments "tag", $env:LOCAL_REPO, "$($env:DOCKER_REPO):v$($env:VERSION)-$($env:PLATFORM -replace '/','-')"
+  Invoke-CommandWithEcho $env:DOCKER -Arguments "push", "$($env:DOCKER_REPO):v$($env:VERSION)-$($env:PLATFORM -replace '/','-')"
 }
 
 ## TARGET test-image Test local image
 function Invoke-Target-Test-Image {
   Write-Target "test-image"
-  Invoke-CommandWithEcho -Command $env:DOCKER -Arguments "run", "--platform=$env:PLATFORM", "--rm", "-t", $env:LOCAL_REPO, "-v"
+  Invoke-CommandWithEcho $env:DOCKER -Arguments "run", "--platform=$env:PLATFORM", "--rm", "-t", $env:LOCAL_REPO, "-v"
 }
 
 function Invoke-Target-Help {

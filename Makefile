@@ -13,15 +13,21 @@ PRINTF = printf
 RM = rm
 SORT = sort
 
+BIN := gitlab-download-release
+
+ifeq ($(GOOS),windows)
+EXE := .exe
+else
+EXE :=
+endif
+
 ifeq ($(OS),Windows_NT)
-BIN := gitlab-download-release.exe
 ifneq (,$(LOCALAPPDATA))
 BINDIR = $(LOCALAPPDATA)\Microsoft\WindowsApps
 else
 BINDIR = C:\Windows\System32
 endif
 else
-BIN := gitlab-download-release
 ifneq (,$(wildcard $(HOME)/.local/bin))
 BINDIR = $(HOME)/.local/bin
 else ifneq (,$(wildcard $(HOME)/bin))
@@ -31,12 +37,15 @@ BINDIR = /usr/local/bin
 endif
 endif
 
-CGO_ENABLED := 0
-export CGO_ENABLED
+VERSION = $(shell ( git describe --tags --exact-match 2>/dev/null || ( git describe --tags 2>/dev/null || echo "0.0.0-0-g$$(git rev-parse --short=8 HEAD)" ) | sed 's/-[0-9][0-9]*-g/-SNAPSHOT-/') | sed 's/^v//' )
+REVISION = $(shell git rev-parse HEAD)
+BUILDDATE = $(shell TZ=GMT date '+%Y-%m-%dT%R:%SZ')
 
-VERSION ?= $(shell ( git describe --tags --exact-match 2>/dev/null || ( git describe --tags 2>/dev/null || echo "0.0.0-0-g$$(git rev-parse --short=8 HEAD)" ) | sed 's/-[0-9][0-9]*-g/-SNAPSHOT-/') | sed 's/^v//' )
-REVISION ?= $(shell git rev-parse HEAD)
-BUILDDATE ?= $(shell TZ=GMT date '+%Y-%m-%dT%R:%SZ')
+GOBUILDFLAGS = -trimpath
+GOBUILDLDFLAGS = -s -w -X main.version=$(VERSION)
+
+CGO_ENABLED = 0
+export CGO_ENABLED
 
 .PHONY: help
 help:
@@ -46,7 +55,7 @@ help:
 .PHONY: build
 build: ## Build app binary for single target
 	$(call print-target)
-	$(GO) build -trimpath -ldflags="-s -w -X main.version=$(VERSION)"
+	$(GO) build $(GOBUILDFLAGS) -ldflags="$(GOBUILDLDFLAGS)"
 
 .PHONY: goreleaser
 goreleaser: ## Build app binary for all targets
@@ -58,14 +67,14 @@ $(BIN):
 
 .PHONY: install
 install: ## Build and install app binary
-install: $(BIN)
+install: $(BIN)$(EXE)
 	$(call print-target)
-	$(INSTALL) $(BIN) $(BINDIR)
+	$(INSTALL) $(BIN)$(EXE) $(BINDIR)
 
 .PHONY: uninstall
 uninstall: ## Uninstall app binary
 uninstall:
-	$(RM) -f $(BINDIR)/$(BIN)
+	$(RM) -f $(BINDIR)/$(BIN)$(EXE)
 
 .PHONY: download
 download: ## Download Go modules
@@ -85,7 +94,8 @@ upgrade: ## Upgrade Go modules
 .PHONY: clean
 clean: ## Clean working directory
 	$(call print-target)
-	$(RM) -rf dist $(BIN)
+	$(RM) -f $(BIN)$(EXE)
+	$(RM) -rf dist
 
 .PHONY: version
 version: ## Show version
