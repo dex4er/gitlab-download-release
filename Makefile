@@ -11,6 +11,7 @@ ECHO = echo
 GO = go
 GORELEASER = goreleaser
 INSTALL = install
+MAKE = make
 PRINTF = printf
 RM = rm
 SORT = sort
@@ -119,6 +120,7 @@ endif
 
 .PHONY: image
 image: ## Build a local image without publishing artifacts.
+	$(MAKE) build GOOS=linux
 	$(call print-target)
 	$(DOCKER) buildx build --file=$(DOCKERFILE) \
 	--platform=$(PLATFORM) \

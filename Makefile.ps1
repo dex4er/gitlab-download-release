@@ -228,6 +228,8 @@ if (-not $env:PLATFORM) {
 
 ## TARGET image Build a local image without publishing artifacts.
 function Invoke-Target-Image {
+  $env:GOOS = "linux"
+  Invoke-Target-Build
   Write-Target "image"
   Invoke-CommandWithEcho $env:DOCKER -Arguments "buildx", "build", "--file=$env:DOCKERFILE",
   "--platform=$env:PLATFORM",
