@@ -1,4 +1,4 @@
-BIN := gitlab-download-release
+NAME := gitlab-download-release
 
 ifneq (,$(wildcard .env))
 	include .env
@@ -15,6 +15,14 @@ MAKE = make
 PRINTF = printf
 RM = rm
 SORT = sort
+
+ifeq ($(GOOS),windows)
+EXE = .exe
+else ifeq ($(shell $(GO) env GOOS),windows)
+EXE = .exe
+endif
+
+BIN = $(NAME)$(EXE)
 
 ifeq ($(OS),Windows_NT)
 ifneq (,$(LOCALAPPDATA))
@@ -59,14 +67,14 @@ $(BIN):
 
 .PHONY: install
 install: ## Build and install app binary
-install: $(BIN)$(EXE)
+install: $(BIN)
 	$(call print-target)
-	$(INSTALL) $(BIN)$(EXE) $(BINDIR)
+	$(INSTALL) $(BIN) $(BINDIR)
 
 .PHONY: uninstall
 uninstall: ## Uninstall app binary
 uninstall:
-	$(RM) -f $(BINDIR)/$(BIN)$(EXE)
+	$(RM) -f $(BINDIR)/$(BIN)
 
 .PHONY: download
 download: ## Download Go modules
@@ -86,7 +94,7 @@ upgrade: ## Upgrade Go modules
 .PHONY: clean
 clean: ## Clean working directory
 	$(call print-target)
-	$(RM) -f $(BIN)$(EXE)
+	$(RM) -f $(BIN)
 	$(RM) -rf dist
 
 .PHONY: version
