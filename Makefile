@@ -101,10 +101,10 @@ revision: ## Show revision
 builddate: ## Show build date
 	@$(ECHO) "$(BUILDDATE)"
 
-DOCKERFILE ?= Dockerfile
-IMAGE_NAME ?= gitlab-download-release
-LOCAL_REPO ?= localhost:5000/$(IMAGE_NAME)
-DOCKER_REPO ?= localhost:5000/$(IMAGE_NAME)
+DOCKERFILE = Dockerfile
+IMAGE_NAME = $(BIN)
+LOCAL_REPO = localhost:5000/$(IMAGE_NAME)
+DOCKER_REPO = localhost:5000/$(IMAGE_NAME)
 
 ifeq ($(PROCESSOR_ARCHITECTURE),ARM64)
 PLATFORM = linux/arm64

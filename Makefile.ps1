@@ -204,7 +204,7 @@ function Invoke-Target-Builddate {
 }
 
 if (-not $env:DOCKERFILE) { $env:DOCKERFILE = "Dockerfile" }
-if (-not $env:IMAGE_NAME) { $env:IMAGE_NAME = "gitlab-download-release" }
+if (-not $env:IMAGE_NAME) { $env:IMAGE_NAME = $env:BIN }
 if (-not $env:LOCAL_REPO) { $env:LOCAL_REPO = "localhost:5000/$env:IMAGE_NAME" }
 if (-not $env:DOCKER_REPO) { $env:DOCKER_REPO = "localhost:5000/$env:IMAGE_NAME" }
 
