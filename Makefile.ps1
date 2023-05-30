@@ -44,7 +44,6 @@ else {
 }
 
 if ($env:OS -eq "Windows_NT") {
-  if (-not $env:BIN) { $env:BIN = "gitlab-download-release.exe" }
   if ($env:LOCALAPPDATA) {
     if (-not $env:BINDIR) { $env:BINDIR = "$env:LOCALAPPDATA\Microsoft\WindowsApps" }
   }
@@ -53,7 +52,6 @@ if ($env:OS -eq "Windows_NT") {
   }
 }
 else {
-  if (-not $env:BIN) { $env:BIN = "gitlab-download-release" }
   if (Test-Path "$env:HOME\.local\bin") {
     if (-not $env:BINDIR) { $env:BINDIR = "$env:HOME\.local\bin" }
   }
