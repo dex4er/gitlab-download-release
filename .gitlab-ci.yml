@@ -1,3 +1,6 @@
+variables:
+  DOCKER_IO: docker.io
+
 stages:
   - download
   - release
@@ -7,7 +10,7 @@ download:
   stage: download
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
-  image: debian:bullseye
+  image: $DOCKER_IO/debian:bullseye
   variables:
     ASDF_DIR: $CI_PROJECT_DIR/.cache/asdf
     ASDF_DATA_DIR: $CI_PROJECT_DIR/.cache/asdf
@@ -102,7 +105,7 @@ test:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
   image:
-    name: dex4er/gitlab-download-release:$CI_COMMIT_TAG
+    name: $DOCKER_IO/dex4er/gitlab-download-release:$CI_COMMIT_TAG
     entrypoint: [""]
   variables:
     GIT_STRATEGY: none
