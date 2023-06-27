@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/spf13/cobra v1.7.0
-	github.com/xanzy/go-gitlab v0.83.0
+	github.com/xanzy/go-gitlab v0.86.0
 )
 
 require (
