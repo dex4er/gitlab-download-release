@@ -40,7 +40,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.27"
 
       - name: Set up QEMU
         if: contains(matrix.platform, 'linux/arm64')
@@ -154,7 +154,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.27"
 
       - name: Goreleaser
         uses: goreleaser/goreleaser-action@v4
