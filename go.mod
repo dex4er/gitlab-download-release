@@ -1,6 +1,6 @@
 module github.com/dex4er/gitlab-download-release
 
-go 1.20
+go 1.23.0
 
 require (
 	github.com/spf13/cobra v1.7.0
@@ -18,7 +18,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/oauth2 v0.6.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.29.1 // indirect
